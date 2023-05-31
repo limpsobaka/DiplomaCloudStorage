@@ -2,6 +2,7 @@ package ru.netology.cloudstorage.controllers;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -9,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.netology.cloudstorage.dto.FileDTO;
 import ru.netology.cloudstorage.dto.FileListDTO;
-import ru.netology.cloudstorage.dto.FileResponseDTO;
 import ru.netology.cloudstorage.dto.ResponseDTO;
 import ru.netology.cloudstorage.entity.UserEntity;
 import ru.netology.cloudstorage.response.UnauthorizedResponse;
@@ -54,7 +54,7 @@ public class FileController {
   public ResponseEntity postFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename, @ModelAttribute FileDTO fileDTO) {
     UserEntity user = authenticationService.getUserByToken(authToken);
     if (user != null) {
-      storageService.saveFile(fileDTO, filename, user);
+      storageService.saveFile(fileDTO.getFile(), filename, user);
       return ResponseEntity.ok().build();
     } else {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
@@ -77,10 +77,9 @@ public class FileController {
   public ResponseEntity getFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename) throws IOException {
     UserEntity user = authenticationService.getUserByToken(authToken);
     if (user != null) {
-      FileResponseDTO fileResponse = storageService.getFile(filename, user);
-      if (fileResponse != null) {
-        return ResponseEntity.ok().body(fileResponse.getResource());
-
+      Resource resource = storageService.getFileResource(filename, user);
+      if (resource != null) {
+        return ResponseEntity.ok().body(resource);
       } else {
         return ResponseEntity.internalServerError()
                 .body(new ResponseDTO("Error upload file", HttpStatus.INTERNAL_SERVER_ERROR.value()));

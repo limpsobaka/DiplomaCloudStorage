@@ -24,7 +24,7 @@ public class AuthenticationController {
   public ResponseEntity authenticateUser(@RequestBody LoginDTO loginDto) {
     Map<String, String> map = new LinkedHashMap<>();
     String token;
-    UserEntity user = authenticationService.authenticateUser(loginDto);
+    UserEntity user = authenticationService.authenticateUser(loginDto.getLogin(), loginDto.getPassword());
     if (user != null) {
       token = authenticationService.generateAuthenticationToken(user);
       map.put("auth-token", token);

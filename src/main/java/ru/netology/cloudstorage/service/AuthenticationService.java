@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.netology.cloudstorage.dao.UserRepositoryDAO;
-import ru.netology.cloudstorage.dto.LoginDTO;
 import ru.netology.cloudstorage.entity.UserEntity;
 
 import java.util.UUID;
@@ -19,9 +18,9 @@ public class AuthenticationService {
     this.passwordEncoder = passwordEncoder;
   }
 
-  public UserEntity authenticateUser(LoginDTO loginDto) {
-    UserEntity user = userRepositoryDAO.findByLogin(loginDto.getLogin());
-    if (user != null && passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
+  public UserEntity authenticateUser(String login, String password) {
+    UserEntity user = userRepositoryDAO.findByLogin(login);
+    if (user != null && passwordEncoder.matches(password, user.getPassword())) {
       return user;
     } else {
       return null;

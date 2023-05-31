@@ -6,11 +6,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.netology.cloudstorage.config.StorageProperties;
 import ru.netology.cloudstorage.dao.FileRepositoryDAO;
-import ru.netology.cloudstorage.dto.FileDTO;
-import ru.netology.cloudstorage.dto.FileResponseDTO;
 import ru.netology.cloudstorage.entity.FileEntity;
 import ru.netology.cloudstorage.entity.UserEntity;
 
@@ -45,20 +44,20 @@ public class FileSystemStorageService implements StorageService {
   }
 
   @Override
-  public String saveFile(FileDTO fileDTO, String filename, UserEntity user) {
+  public String saveFile(MultipartFile multipartFile, String filename, UserEntity user) {
     try {
-      if (fileDTO.getFile().isEmpty()) {
+      if (multipartFile.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store empty file " + filename);
       }
       if (filename.contains("..")) {
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Cannot store file with relative path outside current directory " + filename);
       }
-      try (InputStream inputStream = fileDTO.getFile().getInputStream()) {
+      try (InputStream inputStream = multipartFile.getInputStream()) {
         Files.copy(inputStream, this.rootLocation.resolve(filename),
                 StandardCopyOption.REPLACE_EXISTING);
-        String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(inputStream);
-        FileEntity file = new FileEntity(user, md5, filename, fileDTO.getFile().getSize());
+        String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(multipartFile.getInputStream());
+        FileEntity file = new FileEntity(user, md5, filename, multipartFile.getSize());
         fileRepositoryDAO.save(file);
 
       }
@@ -74,10 +73,10 @@ public class FileSystemStorageService implements StorageService {
   }
 
   @Override
-  public FileResponseDTO getFile(String filename, UserEntity user) {
+  public Resource getFileResource(String filename, UserEntity user) {
     FileEntity file = fileRepositoryDAO.findFileByFileAndUser(filename, user);
     Resource resource = loadFileAsResource(file.getFile());
-    return new FileResponseDTO(file.getHash(), resource);
+    return resource;
   }
 
   @Override
