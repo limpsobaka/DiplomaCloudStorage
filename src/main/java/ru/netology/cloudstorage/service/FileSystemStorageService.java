@@ -6,20 +6,18 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.netology.cloudstorage.config.StorageProperties;
 import ru.netology.cloudstorage.dao.FileRepositoryDAO;
 import ru.netology.cloudstorage.entity.FileEntity;
 import ru.netology.cloudstorage.entity.UserEntity;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Service
@@ -44,22 +42,20 @@ public class FileSystemStorageService implements StorageService {
   }
 
   @Override
-  public String saveFile(MultipartFile multipartFile, String filename, UserEntity user) {
+  public String saveFile(byte[] multipartFileByteArray, String filename, UserEntity user) {
     try {
-      if (multipartFile.isEmpty()) {
+      if (multipartFileByteArray.length <= 0) {
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store empty file " + filename);
       }
       if (filename.contains("..")) {
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Cannot store file with relative path outside current directory " + filename);
       }
-      try (InputStream inputStream = multipartFile.getInputStream()) {
-        Files.copy(inputStream, this.rootLocation.resolve(filename),
-                StandardCopyOption.REPLACE_EXISTING);
-        String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(multipartFile.getInputStream());
-        FileEntity file = new FileEntity(user, md5, filename, multipartFile.getSize());
+      try (FileOutputStream fileOutputStream = new FileOutputStream(this.rootLocation.resolve(filename).toFile())) {
+        fileOutputStream.write(multipartFileByteArray);
+        String md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(multipartFileByteArray);
+        FileEntity file = new FileEntity(user, md5, filename, multipartFileByteArray.length);
         fileRepositoryDAO.save(file);
-
       }
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,

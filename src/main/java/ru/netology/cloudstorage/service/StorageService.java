@@ -2,7 +2,6 @@ package ru.netology.cloudstorage.service;
 
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
 import ru.netology.cloudstorage.entity.FileEntity;
 import ru.netology.cloudstorage.entity.UserEntity;
 
@@ -14,7 +13,7 @@ public interface StorageService {
 
   void init();
 
-  String saveFile(MultipartFile multipartFile, String filename, UserEntity userEntity);
+  String saveFile(byte[] multipartFileByteArray, String filename, UserEntity userEntity);
 
   List<FileEntity> listAllFiles(UserEntity userEntity, Pageable page);
 

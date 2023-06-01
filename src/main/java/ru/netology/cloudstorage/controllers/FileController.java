@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.netology.cloudstorage.dto.FileDTO;
 import ru.netology.cloudstorage.dto.FileListDTO;
 import ru.netology.cloudstorage.dto.ResponseDTO;
@@ -54,7 +55,14 @@ public class FileController {
   public ResponseEntity postFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename, @ModelAttribute FileDTO fileDTO) {
     UserEntity user = authenticationService.getUserByToken(authToken);
     if (user != null) {
-      storageService.saveFile(fileDTO.getFile(), filename, user);
+      byte[] multipartFileByteArray;
+      try {
+        multipartFileByteArray = fileDTO.getFile().getBytes();
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to store file " + filename);
+      }
+      storageService.saveFile(multipartFileByteArray, filename, user);
       return ResponseEntity.ok().build();
     } else {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
