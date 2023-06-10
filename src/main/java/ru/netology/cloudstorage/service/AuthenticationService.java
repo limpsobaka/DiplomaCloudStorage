@@ -27,12 +27,17 @@ public class AuthenticationService {
     }
   }
 
-  public String generateAuthenticationToken(UserEntity user) {
-    String token = UUID.randomUUID().toString();
+  public String assignTokenToUser(UserEntity user) {
+    String token = generateToken();
     user.setToken(token);
     userRepositoryDAO.save(user);
     return token;
   }
+
+  private String generateToken() {
+    return UUID.randomUUID().toString();
+  }
+
 
   public boolean revokeAuthentication(String token) {
     UserEntity user = getUserByToken(token);

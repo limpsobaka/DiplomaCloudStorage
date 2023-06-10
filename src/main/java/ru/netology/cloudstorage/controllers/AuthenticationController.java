@@ -23,10 +23,9 @@ public class AuthenticationController {
   @PostMapping(value = "login", consumes = "application/json")
   public ResponseEntity authenticateUser(@RequestBody LoginDTO loginDto) {
     Map<String, String> map = new LinkedHashMap<>();
-    String token;
     UserEntity user = authenticationService.authenticateUser(loginDto.getLogin(), loginDto.getPassword());
     if (user != null) {
-      token = authenticationService.generateAuthenticationToken(user);
+      String token = authenticationService.assignTokenToUser(user);
       map.put("auth-token", token);
       return new ResponseEntity(map, HttpStatus.OK);
     } else {

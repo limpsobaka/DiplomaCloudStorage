@@ -34,84 +34,81 @@ public class FileController {
   @GetMapping("list")
   public ResponseEntity list(@RequestHeader("auth-token") String authToken, @RequestParam("limit") int limit) {
     UserEntity user = authenticationService.getUserByToken(authToken);
-    if (user != null) {
-      Pageable pageSize = PageRequest.of(0, limit);
-      List<FileListDTO> fileList = storageService.listAllFiles(user, pageSize)
-              .stream()
-              .map(it -> new FileListDTO(it.getFile(), it.getSize())).toList();
-      if (fileList != null) {
-        return ResponseEntity.ok().body(fileList);
-      } else {
-        return ResponseEntity.internalServerError()
-                .body(new ResponseDTO("Error getting file list", HttpStatus.INTERNAL_SERVER_ERROR.value()));
-      }
-    } else {
+    if (user == null) {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
     }
-
+    Pageable pageSize = PageRequest.of(0, limit);
+    List<FileListDTO> fileList = storageService.listAllFiles(user, pageSize)
+            .stream()
+            .map(it -> new FileListDTO(it.getFile(), it.getSize())).toList();
+    if (fileList != null) {
+      return ResponseEntity.ok().body(fileList);
+    } else {
+      return ResponseEntity.internalServerError()
+              .body(new ResponseDTO("Error getting file list", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+    }
   }
 
   @PostMapping(path = "file", consumes = "multipart/form-data")
   public ResponseEntity postFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename, @ModelAttribute FileDTO fileDTO) {
     UserEntity user = authenticationService.getUserByToken(authToken);
-    if (user != null) {
-      byte[] multipartFileByteArray;
-      try {
-        multipartFileByteArray = fileDTO.getFile().getBytes();
-      } catch (IOException e) {
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to store file " + filename);
-      }
-      storageService.saveFile(multipartFileByteArray, filename, user);
-      return ResponseEntity.ok().build();
-    } else {
+    if (user == null) {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
     }
+    byte[] multipartFileByteArray;
+    try {
+      multipartFileByteArray = fileDTO.getFile().getBytes();
+    } catch (IOException e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+              "Failed to store file " + filename);
+    }
+    storageService.saveFile(multipartFileByteArray, filename, user);
+    return ResponseEntity.ok().build();
+
   }
 
-  //
   @DeleteMapping("file")
   public ResponseEntity deleteFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename) throws IOException {
     UserEntity user = authenticationService.getUserByToken(authToken);
-    if (user != null) {
-      storageService.deleteFile(filename, user);
-      return new ResponseEntity<>(HttpStatus.OK);
-    } else {
+    if (user == null) {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
     }
+    storageService.deleteFile(filename, user);
+    return new ResponseEntity<>(HttpStatus.OK);
   }
 
   @GetMapping(value = "file", produces = "multipart/form-data")
   public ResponseEntity getFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename) throws IOException {
     UserEntity user = authenticationService.getUserByToken(authToken);
-    if (user != null) {
-      Resource resource = storageService.getFileResource(filename, user);
-      if (resource != null) {
-        return ResponseEntity.ok().body(resource);
-      } else {
-        return ResponseEntity.internalServerError()
-                .body(new ResponseDTO("Error upload file", HttpStatus.INTERNAL_SERVER_ERROR.value()));
-      }
-    } else {
+    if (user == null) {
       return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
+    }
+    Resource resource = storageService.getFileResource(filename, user);
+    if (resource != null) {
+      return ResponseEntity.ok().body(resource);
+    } else {
+      return ResponseEntity.internalServerError()
+              .body(new ResponseDTO("Error upload file", HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
   }
 
   @PutMapping("file")
   public ResponseEntity putFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename, @RequestBody String inputNewFilename) {
-    String newFileName;
+    String newFileName = getNewFileName(inputNewFilename);
+    UserEntity user = authenticationService.getUserByToken(authToken);
+    if (user == null) {
+      return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
+    }
+    storageService.changeFileName(user, filename, newFileName);
+    return new ResponseEntity(HttpStatus.OK);
+  }
+
+  private String getNewFileName(String inputNewFilename) {
     try {
       JSONObject obj = new JSONObject(inputNewFilename);
-      newFileName = obj.getString("filename");
+      return obj.getString("filename");
     } catch (JSONException e) {
-      return ResponseEntity.badRequest().body(new ResponseDTO("Can not update file", HttpStatus.BAD_REQUEST.value()));
-    }
-    UserEntity user = authenticationService.getUserByToken(authToken);
-    if (user != null) {
-      storageService.changeFileName(user, filename, newFileName);
-      return new ResponseEntity(HttpStatus.OK);
-    } else {
-      return new ResponseEntity(new UnauthorizedResponse(), HttpStatus.UNAUTHORIZED);
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can not update file");
     }
   }
 }
