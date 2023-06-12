@@ -2,8 +2,8 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: root
+    username:
+    password:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -22,3 +22,16 @@ server:
 # files storage location (stores all files uploaded via REST API)
 storage:
   location: ./webapps/cs/uploads
+logging:
+  group:
+    cloudstorage: ru.netology.cloudstorage
+  file:
+    name: "application.log"
+    max-size: "1Mb"
+    total-size-cap: "7Mb"
+    clean-history-on-start: "true"
+  level:
+    root: "error"
+    org.springframework.web: "error"
+    org.hibernate: "error"
+    cloudstorage: "error"

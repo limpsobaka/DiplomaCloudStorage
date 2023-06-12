@@ -17,13 +17,15 @@ public class FileEntity {
   @OneToOne
   private UserEntity user;
   private String hash;
-  private String file;
+  private String fileName;
+  private String fileNameUUID;
   private long size;
 
-  public FileEntity(UserEntity user, String hash, String file, long size) {
+  public FileEntity(UserEntity user, String hash, String fileName, String fileNameUUID, long size) {
     this.user = user;
     this.hash = hash;
-    this.file = file;
+    this.fileName = fileName;
+    this.fileNameUUID = fileNameUUID;
     this.size = size;
   }
 }

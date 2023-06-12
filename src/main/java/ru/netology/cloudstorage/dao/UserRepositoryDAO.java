@@ -9,5 +9,4 @@ public interface UserRepositoryDAO extends JpaRepository<UserEntity, Long> {
   UserEntity findByLogin(String userName);
 
   UserEntity findUserByToken(String token);
-
 }

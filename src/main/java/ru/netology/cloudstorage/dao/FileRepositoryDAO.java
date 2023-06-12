@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface FileRepositoryDAO extends JpaRepository<FileEntity, Long> {
-  FileEntity findFileByFileAndUser(String file, UserEntity userEntity);
-
-  List<FileEntity> findFilesByUser(UserEntity userEntity, Pageable pageable);
+  FileEntity findFileEntityByFileNameAndUser(String fileName, UserEntity userEntity);
+  List<FileEntity> findFileEntitiesByUser(UserEntity userEntity, Pageable pageable);
+  List<FileEntity> findFileEntitiesByHashAndUser(String hash, UserEntity userEntity);
 }
