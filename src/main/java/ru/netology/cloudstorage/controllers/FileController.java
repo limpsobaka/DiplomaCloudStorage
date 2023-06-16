@@ -75,13 +75,8 @@ public class FileController {
   public ResponseEntity<Resource> getFile(@RequestHeader("auth-token") String authToken, @RequestParam("filename") String filename) {
     authenticationService.checkUserTokenAuthentication(authToken);
     var userEntity = authenticationService.getUserByToken(authToken);
-
     var resource = storageService.getFile(filename, userEntity);
-    if (resource == null) {
-      logger.error("Error upload file {}", filename);
-      throw new ServerErrorResponseException("Error upload file");
-    }
-    logger.debug("File {} uploaded successfully", filename);
+
     return ResponseEntity.ok().body(resource);
   }
 

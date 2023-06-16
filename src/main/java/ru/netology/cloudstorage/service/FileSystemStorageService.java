@@ -47,14 +47,19 @@ public class FileSystemStorageService implements StorageService {
 
   @Override
   public List<FileEntity> listAllFiles(UserEntity userEntity, Pageable page) {
+    List<FileEntity> fileEntityList = fileRepositoryDAO.findFileEntitiesByUser(userEntity, page);
     logger.debug("File list returned successfully");
-    return fileRepositoryDAO.findFileEntitiesByUser(userEntity, page);
+    return fileEntityList;
   }
 
   @Override
-  public Resource getFile(String filename, UserEntity user) {
-    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, user);
+  public Resource getFile(String filename, UserEntity userEntity) {
+    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, userEntity);
     var resource = loadFileAsResource(fileEntity.getFileNameUUID());
+    if (resource.getFilename() == null) {
+      logger.error("Error upload file {}", filename);
+      throw new ServerErrorResponseException("Error upload file");
+    }
     logger.debug("File resource of {} returned successfully", filename);
     return resource;
   }
@@ -86,8 +91,8 @@ public class FileSystemStorageService implements StorageService {
 
   @Override
   @Transactional(rollbackForClassName = "ServerErrorResponseException")
-  public void deleteFile(String filename, UserEntity user) {
-    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, user);
+  public void deleteFile(String filename, UserEntity userEntity) {
+    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, userEntity);
     fileRepositoryDAO.delete(fileEntity);
     try {
       Files.delete(loadFilePath(fileEntity.getFileNameUUID()));
@@ -99,8 +104,8 @@ public class FileSystemStorageService implements StorageService {
   }
 
   @Override
-  public void changeFileName(UserEntity user, String filename, String newFileName) {
-    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, user);
+  public void changeFileName(UserEntity userEntity, String filename, String newFileName) {
+    var fileEntity = fileRepositoryDAO.findFileEntityByFileNameAndUser(filename, userEntity);
     if (fileEntity == null) {
       logger.error("Failed to find file {}", filename);
       throw new ServerErrorResponseException("Failed to find file " + filename);
@@ -157,8 +162,9 @@ public class FileSystemStorageService implements StorageService {
   }
 
   private Path loadFilePath(String filename) {
+    var path = rootLocation.resolve(filename);
     logger.debug("File path loaded successfully");
-    return rootLocation.resolve(filename);
+    return path;
   }
 
   private String getMd5FileHash(byte[] multipartFileByteArray) {

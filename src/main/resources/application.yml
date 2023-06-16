@@ -34,4 +34,4 @@ logging:
     root: "error"
     org.springframework.web: "error"
     org.hibernate: "error"
-    cloudstorage: "error"
+    cloudstorage: "debug"
